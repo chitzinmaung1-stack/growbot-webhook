@@ -1,13 +1,15 @@
+import os
 import requests
 from flask import Flask, request
 import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- Configuration ---
-PAGE_ACCESS_TOKEN = "EAAbEi8p64aoBQtgWMZBeKOUAQfHVd5402FVO2yyqZBPtcrBZC3lzOivjMmG03YHGOZCDJsnNnQTFzUO3U1txWUCwzZC7Na7GadR55w5KeGWZBOR3HnZAaucdlWiOGNIaK0sh8cEQqiZA5as00mCGauvnaW2l0cx52xGGUPopwUY961HGjEgW1SKMbExBn7ACHJwqoQ3LabojjwZDZD"
-VERIFY_TOKEN = "GrowBot_Secret_123"
-GEMINI_API_KEY = "AIzaSyCe5I9_lyDiUQID2kPAx9awJceBnRMDNQs"
+# --- Configuration (Render Environment Variables မှ လှမ်းယူခြင်း) ---
+# ဒီနေရာမှာ Key တွေ တိုက်ရိုက်ထည့်စရာ မလိုတော့ပါဘူး
+PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN')
+VERIFY_TOKEN = os.environ.get('VERIFY_TOKEN')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Gemini AI Setup
 genai.configure(api_key=GEMINI_API_KEY)
@@ -49,3 +51,5 @@ def send_message(recipient_id, message_text):
         "message": {"text": message_text}
     }
     requests.post(url, json=payload)
+
+# Render အတွက် app.run() ထည့်စရာ မလိုပါ
