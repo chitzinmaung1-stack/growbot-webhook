@@ -10,7 +10,7 @@ PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN')
 VERIFY_TOKEN = os.environ.get('VERIFY_TOKEN')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
-# Gemini AI Setup - Model နာမည်ကို gemini-1.5-flash-8b သို့ ပြောင်းထားသည်
+# Gemini AI Setup
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash-8b')
 
@@ -28,19 +28,17 @@ def webhook():
             for messaging_event in entry.get('messaging', []):
                 if messaging_event.get('message'):
                     sender_id = messaging_event['sender']['id']
-                    message_text = messaging_event['messaging_event']['message'].get('text')
+                    # ဒီနေရာမှာ messaging_event['message'] လို့ပဲ ဖြစ်ရမှာပါ
+                    message_text = messaging_event['message'].get('text')
                     
                     if message_text:
                         try:
-                            # Gemini ဆီက အဖြေတောင်းခြင်း
                             prompt = f"မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးစွာ စာပြန်ပေးပါ။ မေးခွန်းမှာ: {message_text}"
                             response = model.generate_content(prompt)
                             ai_answer = response.text
-                            
-                            # Facebook ဆီ စာပြန်ပို့ခြင်း
                             send_message(sender_id, ai_answer)
                         except Exception as e:
-                            print(f"Error: {e}")
+                            print(f"Error in Gemini: {e}")
     return "ok", 200
 
 def send_message(recipient_id, message_text):
