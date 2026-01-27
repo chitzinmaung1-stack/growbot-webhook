@@ -5,15 +5,14 @@ import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- Configuration (Render Environment Variables မှ လှမ်းယူခြင်း) ---
-# ဒီနေရာမှာ Key တွေ တိုက်ရိုက်ထည့်စရာ မလိုတော့ပါဘူး
+# --- Configuration ---
 PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN')
 VERIFY_TOKEN = os.environ.get('VERIFY_TOKEN')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
-# Gemini AI Setup
+# Gemini AI Setup - Model နာမည်ကို gemini-1.5-flash-8b သို့ ပြောင်းထားသည်
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-1.5-flash-8b')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
@@ -29,16 +28,16 @@ def webhook():
             for messaging_event in entry.get('messaging', []):
                 if messaging_event.get('message'):
                     sender_id = messaging_event['sender']['id']
-                    message_text = messaging_event['message'].get('text')
+                    message_text = messaging_event['messaging_event']['message'].get('text')
                     
                     if message_text:
                         try:
-                            # 1. Gemini ဆီက အဖြေတောင်းခြင်း
+                            # Gemini ဆီက အဖြေတောင်းခြင်း
                             prompt = f"မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးစွာ စာပြန်ပေးပါ။ မေးခွန်းမှာ: {message_text}"
                             response = model.generate_content(prompt)
                             ai_answer = response.text
                             
-                            # 2. Facebook ဆီ စာပြန်ပို့ခြင်း
+                            # Facebook ဆီ စာပြန်ပို့ခြင်း
                             send_message(sender_id, ai_answer)
                         except Exception as e:
                             print(f"Error: {e}")
@@ -51,5 +50,3 @@ def send_message(recipient_id, message_text):
         "message": {"text": message_text}
     }
     requests.post(url, json=payload)
-
-# Render အတွက် app.run() ထည့်စရာ မလိုပါ
