@@ -49,6 +49,3 @@ def send_message(recipient_id, message_text):
         "message": {"text": message_text}
     }
     requests.post(url, json=payload)
-
-if __name__ == "__main__":
-    app.run(port=5000)
