@@ -5,10 +5,12 @@ import google.generativeai as genai
 app = Flask(__name__)
 
 # --- Configuration (ဒီနေရာမှာ သင့် Key တွေကို တိုက်ရိုက်ထည့်ပါ) ---
+# Environment Variables မသုံးဘဲ သင့်ရဲ့ Key အသစ်တွေကို ဒီမှာပဲ တန်းထည့်လိုက်ပါ
 PAGE_ACCESS_TOKEN = "EAAbEi8p64aoBQtgWMZBeKOUAQfHVd5402FVO2yyqZBPtcrBZC3lzOivjMmG03YHGOZCDJsnNnQTFzUO3U1txWUCwzZC7Na7GadR55w5KeGWZBOR3HnZAaucdlWiOGNIaK0sh8cEQqiZA5as00mCGauvnaW2l0cx52xGGUPopwUY961HGjEgW1SKMbExBn7ACHJwqoQ3LabojjwZDZD"
 VERIFY_TOKEN = "GrowBot_Secret_123"
 GEMINI_API_KEY = "AIzaSyAc-s59ffLZKu7mj27jpu4yfiXRHzRrXJA"
-# Gemini AI Setup
+
+# Gemini AI Setup - အတည်ငြိမ်ဆုံး Model ကို သုံးထားပါတယ်
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -30,12 +32,12 @@ def webhook():
                     
                     if message_text:
                         try:
-                            # Gemini ဆီက အဖြေတောင်းခြင်း
+                            # Gemini AI ဆီက အဖြေတောင်းခြင်း
                             prompt = f"မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးစွာ စာပြန်ပေးပါ။ မေးခွန်းမှာ: {message_text}"
                             response = model.generate_content(prompt)
                             ai_answer = response.text
                             
-                            # Facebook ဆီ စာပြန်ပို့ခြင်း
+                            # Facebook Messenger ဆီ စာပြန်ပို့ခြင်း
                             send_message(sender_id, ai_answer)
                         except Exception as e:
                             print(f"Error in Gemini: {e}")
