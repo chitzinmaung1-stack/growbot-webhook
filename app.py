@@ -1,18 +1,16 @@
-import os
 import requests
 from flask import Flask, request
 import google.generativeai as genai
 
 app = Flask(__name__)
 
-# --- Configuration ---
-PAGE_ACCESS_TOKEN = os.environ.get('PAGE_ACCESS_TOKEN')
-VERIFY_TOKEN = os.environ.get('VERIFY_TOKEN')
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-
+# --- Configuration (ဒီနေရာမှာ သင့် Key တွေကို တိုက်ရိုက်ထည့်ပါ) ---
+PAGE_ACCESS_TOKEN = "EAAbEi8p64aoBQtgWMZBeKOUAQfHVd5402FVO2yyqZBPtcrBZC3lzOivjMmG03YHGOZCDJsnNnQTFzUO3U1txWUCwzZC7Na7GadR55w5KeGWZBOR3HnZAaucdlWiOGNIaK0sh8cEQqiZA5as00mCGauvnaW2l0cx52xGGUPopwUY961HGjEgW1SKMbExBn7ACHJwqoQ3LabojjwZDZD"
+VERIFY_TOKEN = "GrowBot_Secret_123"
+GEMINI_API_KEY = "AIzaSyAc-s59ffLZKu7mj27jpu4yfiXRHzRrXJA"
 # Gemini AI Setup
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash-8b')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
@@ -28,14 +26,16 @@ def webhook():
             for messaging_event in entry.get('messaging', []):
                 if messaging_event.get('message'):
                     sender_id = messaging_event['sender']['id']
-                    # ဒီနေရာမှာ messaging_event['message'] လို့ပဲ ဖြစ်ရမှာပါ
                     message_text = messaging_event['message'].get('text')
                     
                     if message_text:
                         try:
+                            # Gemini ဆီက အဖြေတောင်းခြင်း
                             prompt = f"မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးစွာ စာပြန်ပေးပါ။ မေးခွန်းမှာ: {message_text}"
                             response = model.generate_content(prompt)
                             ai_answer = response.text
+                            
+                            # Facebook ဆီ စာပြန်ပို့ခြင်း
                             send_message(sender_id, ai_answer)
                         except Exception as e:
                             print(f"Error in Gemini: {e}")
