@@ -12,7 +12,7 @@ GEMINI_API_KEY = "AIzaSyAc-s59ffLZKu7mj27jpu4yfiXRHzRrXJA"
 
 # Gemini AI Setup - အတည်ငြိမ်ဆုံး Model ကို သုံးထားပါတယ်
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
