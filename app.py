@@ -10,7 +10,7 @@ app = Flask(__name__)
 # Gemini Setup - အောက်ပါစာသားကို အတိအကျ ကူးပါ
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 # Gemini 1.5-Flash-latest ကို သုံးထားပါတယ်
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('models/gemini-1.5-flash-8b')
 @app.route('/webhook', methods=['GET'])
 def verify():
     if request.args.get("hub.verify_token") == os.getenv("VERIFY_TOKEN"):
