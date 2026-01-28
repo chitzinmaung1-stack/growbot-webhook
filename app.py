@@ -35,7 +35,8 @@ def call_gemini_direct(prompt):
     headers = {'Content-Type': 'application/json'}
     
     knowledge_base = """
-    မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
+    မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။
+    Customer တွေကို "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။" လို့ယဥ်ကျေးဖော်ရွေစွာ နှုတ်ဆက်ရမယ်။
     
     **GrowBot Agency core expertise (ကျွမ်းကျင်မှုများ):**
     ၁။ AI Chatbot Development (FB & Telegram): 
