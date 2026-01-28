@@ -34,8 +34,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # အရေးကြီးဆုံးအချက် - v1beta ကို ပြန်ပြောင်းထားပါတယ် (404 Error မတက်စေရန်)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # Model ID ကို -latest ထည့်ပြီး အပြည့်အစုံ ပြောင်းထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
@@ -45,10 +45,10 @@ def call_gemini_direct(prompt):
     try:
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        # API ဘက်က စာသားပြန်လာခြင်းရှိ၊ မရှိ စစ်ဆေးခြင်း
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
+            # Error တက်ရင် API Key ကြောင့်လား၊ Model ကြောင့်လားဆိုတာ ဒီမှာ အဖြေပေါ်ပါလိမ့်မယ်
             print(f"Gemini API Response Error: {result}")
             return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
