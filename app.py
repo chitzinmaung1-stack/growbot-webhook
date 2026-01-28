@@ -16,8 +16,8 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "GrowBot_Secret_123")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Gemini AI Setup - သင်သုံးချင်တဲ့ 2.0 Flash Version ကို ထည့်ပေးထားပါတယ်
-genai.configure(api_key=GEMINI_API_KEY, transport='rest')
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('models/gemini-1.5-flash')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
