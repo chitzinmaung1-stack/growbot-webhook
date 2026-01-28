@@ -33,8 +33,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # အသေချာဆုံး v1 version နဲ့ model/gemini-1.5-flash-latest ကို သုံးထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # Google ရဲ့ Model List အရ အသစ်ဆုံးဖြစ်တဲ့ gemini-2.5-flash ကို သုံးထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
@@ -47,9 +47,7 @@ def call_gemini_direct(prompt):
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            # Error ကို ပိုသိသာအောင် print ထုတ်ထားပါတယ်
-            print(f"DEBUG - API URL: {url.split('?')[0]}")
-            print(f"DEBUG - Response: {result}")
+            print(f"DEBUG - API Response: {result}")
             return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
         print(f"Connection Error: {e}")
