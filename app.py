@@ -34,7 +34,7 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # Model ID ကို flash-8b သို့ ပြောင်းလဲပြီး
+    # Model ID ကို flash-8b သို့ ပြောင်းလဲပြီး v1beta path ကို သုံးထားပါတယ်
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -48,7 +48,6 @@ def call_gemini_direct(prompt):
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            # Error တက်ရင် API Key ကြောင့်လား၊ Model ကြောင့်လားဆိုတာ ဒီမှာ အဖြေပေါ်ပါလိမ့်မယ်
             print(f"Gemini API Response Error: {result}")
             return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
