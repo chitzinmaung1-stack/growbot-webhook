@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
-# Environment Variables များကို စစ်ဆေးခြင်း
+# Environment Variables
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
@@ -28,14 +28,13 @@ def webhook():
                     message_text = messaging['message'].get('text')
                     
                     if message_text:
-                        # Gemini ဆီသို့ တိုက်ရိုက် API ခေါ်ယူခြင်း
                         ai_answer = call_gemini_direct(message_text)
                         send_fb_message(sender_id, ai_answer)
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # v1beta နဲ့ gemini-1.5-flash ကိုပဲ သုံးထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # အသေချာဆုံး v1 version နဲ့ model/gemini-1.5-flash-latest ကို သုံးထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
@@ -48,12 +47,14 @@ def call_gemini_direct(prompt):
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            print(f"Gemini API Response Error: {result}")
+            # Error ကို ပိုသိသာအောင် print ထုတ်ထားပါတယ်
+            print(f"DEBUG - API URL: {url.split('?')[0]}")
+            print(f"DEBUG - Response: {result}")
             return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
         print(f"Connection Error: {e}")
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
-        
+
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
     payload = {"recipient": {"id": recipient_id}, "message": {"text": message_text}}
