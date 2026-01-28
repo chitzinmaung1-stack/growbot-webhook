@@ -31,28 +31,28 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # API URL ကို Stable v1beta အတိုင်း ထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # CEO စမ်းသပ်အောင်မြင်ခဲ့သော gemini-2.0-flash-exp ကို အသုံးပြုထားပါသည်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    # CEO သတ်မှတ်ထားသော Knowledge Database နှင့် နှုတ်ဆက်စကား
     knowledge_base = """
-    မင်းက GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။
+    မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
+    မင်းရဲ့ တာဝန်က GrowBot Agency ရဲ့ ဝန်ဆောင်မှုတွေကို စိတ်ဝင်စားတဲ့ Customer တွေကို ယဉ်ကျေးစွာ ဖြေကြားပေးဖို့ ဖြစ်တယ်။
     
     **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က "မင်္ဂလာပါ" လို့ စတင်နှုတ်ဆက်ရင် ဖြစ်စေ၊ စကားစပြောရင်ဖြစ်စေ အောက်ပါအတိုင်း အမြဲနှုတ်ဆက်ပါ။
     "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။"
 
-    **Agency အကြောင်း သိကောင်းစရာများ:**
-    - ကျွန်တော်တို့က လုပ်ငန်းတွေအတွက် AI Chatbot တွေ တည်ဆောက်ပေးပါတယ်။
-    - Sales Agency အနေနဲ့ လုပ်ငန်းရှင်တွေရဲ့ အရောင်းတိုးတက်အောင် ကူညီပေးပါတယ်။
-    - AI Automation တွေနဲ့ လုပ်ငန်းတွေကို ပိုမိုမြန်ဆန်အောင် လုပ်ဆောင်ပေးပါတယ်။
+    **GrowBot Agency Knowledge Database:**
+    ၁။ ကျွန်တော်တို့က လုပ်ငန်းတွေအတွက် AI Chatbot (Facebook, Telegram) တွေ တည်ဆောက်ပေးပါတယ်။
+    ၂။ Sales & Marketing Agency အနေနဲ့ လုပ်ငန်းတွေရဲ့ အရောင်းတိုးတက်အောင် ကူညီပေးပါတယ်။
+    ၃။ လုပ်ငန်းရှင်တွေ အချိန်ကုန်သက်သာစေဖို့ လုပ်ငန်းစဉ်တွေကို AI နဲ့ Automation လုပ်ပေးပါတယ်။
     
     အမြဲတမ်း 'ခင်ဗျာ' သုံးပြီး ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။
     """
 
     payload = {
         "contents": [{
-            "parts": [{"text": f"{knowledge_base}\n\nCustomer: {prompt}"}]
+            "parts": [{"text": f"{knowledge_base}\n\nCustomer Question: {prompt}"}]
         }]
     }
     
@@ -62,7 +62,8 @@ def call_gemini_direct(prompt):
         if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            print(f"API Error Response: {result}")
+            # 404 ပြန်တက်ရင် Logs မှာ အတိအကျ မြင်ရအောင် ထုတ်ထားပါတယ်
+            print(f"DEBUG - Full Response: {result}")
             return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
         print(f"Request Error: {e}")
