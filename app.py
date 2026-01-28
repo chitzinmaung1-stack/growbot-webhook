@@ -17,7 +17,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Gemini AI Setup - သင်သုံးချင်တဲ့ 2.0 Flash Version ကို ထည့်ပေးထားပါတယ်
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash-exp')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
