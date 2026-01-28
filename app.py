@@ -31,8 +31,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # CEO စမ်းသပ်အောင်မြင်ခဲ့သော gemini-2.0-flash-exp ကို အသုံးပြုထားပါသည်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
+    # CEO စမ်းသပ်အောင်မြင်ခဲ့သော gemini-2.5-flash ကို အသုံးပြုထားပါသည်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     knowledge_base = """
