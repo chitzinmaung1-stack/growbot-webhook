@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 # Gemini Setup - အောက်ပါစာသားကို အတိအကျ ကူးပါ
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-# Gemini 1.5 Flash ကို သုံးထားပါတယ်
-model = genai.GenerativeModel('gemini-1.5-flash') 
+# Gemini 1.5-Flash-latest ကို သုံးထားပါတယ်
+model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
 
 @app.route('/webhook', methods=['GET'])
 def verify():
