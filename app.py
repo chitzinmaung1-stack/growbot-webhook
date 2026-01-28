@@ -10,7 +10,7 @@ app = Flask(__name__)
 # Gemini Setup (Llama အစား Gemini ကို ပြောင်းလဲအသုံးပြုထားပါတယ်)
 # Render Environment ထဲမှာ GOOGLE_API_KEY ဆိုပြီး သေချာထည့်ပေးပါ
 genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 # Facebook Configuration
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
