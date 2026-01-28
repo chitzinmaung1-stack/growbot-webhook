@@ -31,42 +31,39 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # CEO စမ်းသပ်အောင်မြင်ခဲ့သော gemini-2.5-flash ကို အသုံးပြုထားပါသည်
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     knowledge_base = """
     မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
-    မင်းရဲ့ တာဝန်က GrowBot Agency ရဲ့ ဝန်ဆောင်မှုတွေကို စိတ်ဝင်စားတဲ့ Customer တွေကို ယဉ်ကျေးစွာ ဖြေကြားပေးဖို့ ဖြစ်တယ်။
     
-    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က "မင်္ဂလာပါ" လို့ စတင်နှုတ်ဆက်ရင် ဖြစ်စေ၊ စကားစပြောရင်ဖြစ်စေ အောက်ပါအတိုင်း အမြဲနှုတ်ဆက်ပါ။
-    "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။"
+    **GrowBot Agency core expertise (ကျွမ်းကျင်မှုများ):**
+    ၁။ AI Chatbot Development (FB & Telegram): 
+       - Facebook Messenger နှင့် Telegram တို့တွင် AI စနစ်သုံး Bot များ တည်ဆောက်ပေးခြင်း။
+       - အထူးသဖြင့် Telegram တွင် လုပ်ငန်းသုံး Bot များ၊ Airdrop Bot များ နှင့် Task-based Bot များကို စိတ်ကြိုက် ဖန်တီးပေးခြင်း။
+       - Bot မှတစ်ဆင့် Customer အချက်အလက်များ စုဆောင်းခြင်းနှင့် ငွေပေးချေမှုစနစ်များ ချိတ်ဆက်ပေးခြင်း။
+    
+    ၂။ Sales & Marketing Agency: 
+       - လုပ်ငန်းများ၏ အရောင်းတိုးတက်စေရန် Marketing Strategy များ ရေးဆွဲပေးခြင်း။
+       - ထုတ်ကုန်များကို Target Audience ထံသို့ တိုက်ရိုက်ရောက်ရှိအောင် ကူညီပေးခြင်း။
+    
+    ၃။ Business Automation: 
+       - အချိန်ကုန်သက်သာစေမည့် AI Automation စနစ်များဖြင့် လုပ်ငန်းစဉ်များကို အလိုအလျောက် ပြောင်းလဲပေးခြင်း။
 
-    **GrowBot Agency Knowledge Database:**
-    ၁။ ကျွန်တော်တို့က လုပ်ငန်းတွေအတွက် AI Chatbot (Facebook, Telegram) တွေ တည်ဆောက်ပေးပါတယ်။
-    ၂။ Sales & Marketing Agency အနေနဲ့ လုပ်ငန်းတွေရဲ့ အရောင်းတိုးတက်အောင် ကူညီပေးပါတယ်။
-    ၃။ လုပ်ငန်းရှင်တွေ အချိန်ကုန်သက်သာစေဖို့ လုပ်ငန်းစဉ်တွေကို AI နဲ့ Automation လုပ်ပေးပါတယ်။
-    
-    အမြဲတမ်း 'ခင်ဗျာ' သုံးပြီး ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။
+    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer စကားပြောတိုင်း CEO သတ်မှတ်ထားသည့် "မင်္ဂလာပါခင်ဗျာ... AI Manager အနေနဲ့ ကြိုဆိုပါတယ်..." ဆိုသည့်အတိုင်း ယဉ်ကျေးစွာ စတင်ဖြေကြားပါ။
     """
 
     payload = {
         "contents": [{
-            "parts": [{"text": f"{knowledge_base}\n\nCustomer Question: {prompt}"}]
+            "parts": [{"text": f"Knowledge Database: {knowledge_base}\n\nCustomer: {prompt}"}]
         }]
     }
     
     try:
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        if 'candidates' in result and result['candidates']:
-            return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            # 404 ပြန်တက်ရင် Logs မှာ အတိအကျ မြင်ရအောင် ထုတ်ထားပါတယ်
-            print(f"DEBUG - Full Response: {result}")
-            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+        return result['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        print(f"Request Error: {e}")
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
