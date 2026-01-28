@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
-# Environment Variables စစ်ဆေးခြင်း
+# Environment Variables
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
@@ -33,7 +33,7 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # Stable v1 API ကို သုံးထားပါတယ်
+    # Stable v1 API endpoint ကို သုံးထားပါတယ်
     url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -44,10 +44,13 @@ def call_gemini_direct(prompt):
     try:
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        # API ဘက်ကနေ စာသားပြန်လာတာကို ဖတ်ခြင်း
-        return result['candidates'][0]['content']['parts'][0]['text']
+        if 'candidates' in result and result['candidates']:
+            return result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"API Error: {result}")
+            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
-        print(f"Gemini API Error: {e}")
+        print(f"Connection Error: {e}")
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
