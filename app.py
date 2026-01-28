@@ -33,24 +33,37 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # Google ရဲ့ Model List အရ အသစ်ဆုံးဖြစ်တဲ့ gemini-2.5-flash ကို သုံးထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
+    
+    # ဤနေရာတွင် CEO ရဲ့ Knowledge များကို အသေးစိတ် ထည့်သွင်းနိုင်ပါတယ်
+    system_instruction = """
+    မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
+    မင်းရဲ့ တာဝန်က GrowBot Agency ရဲ့ ဝန်ဆောင်မှုတွေကို စိတ်ဝင်စားတဲ့ Customer တွေကို ယဉ်ကျေးစွာ ဖြေကြားပေးဖို့ ဖြစ်တယ်။
+    
+    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က စတင်နှုတ်ဆက်ရင် "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။" လို့ အမြဲ ပြန်လည်ဖြေကြားပါ။
+    
+    **GrowBot Agency Knowledge Database:**
+    ၁။ ကျွန်တော်တို့က လုပ်ငန်းတွေအတွက် AI Chatbot (Facebook, Telegram) တွေ တည်ဆောက်ပေးပါတယ်။
+    ၂။ Sales & Marketing Agency အနေနဲ့ လုပ်ငန်းတွေရဲ့ အရောင်းတိုးတက်အောင် ကူညီပေးပါတယ်။
+    ၃။ လုပ်ငန်းရှင်တွေ အချိန်ကုန်သက်သာစေဖို့ လုပ်ငန်းစဉ်တွေကို AI နဲ့ Automation လုပ်ပေးပါတယ်။
+    
+    **စည်းကမ်းချက်:**
+    - အမြဲတမ်း 'ခင်ဗျာ' သို့မဟုတ် 'ရှင့်' (သို့မဟုတ် ယဉ်ကျေးသော စကားလုံး) ထည့်ပြောပါ။
+    - မသိတဲ့ အချက်အလက်ဆိုရင် လုပ်ငန်းရှင်နဲ့ တိုက်ရိုက်ချိတ်ဆက်ပေးမယ်လို့ ပြောပါ။
+    """
+    
     payload = {
         "contents": [{
-            "parts": [{"text": f"မင်းက GrowBot Agency ရဲ့ အရောင်းဝန်ထမ်း ဖြစ်တယ်။ လူကြီးမင်းလို့ သုံးနှုန်းပြီး ယဉ်ကျေးစွာ မြန်မာလို ပြန်ဖြေပါ။ {prompt}"}]
+            "parts": [{"text": f"{system_instruction}\n\nCustomer: {prompt}"}]
         }]
     }
+    
     try:
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        if 'candidates' in result and result['candidates']:
-            return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            print(f"DEBUG - API Response: {result}")
-            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+        return result['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        print(f"Connection Error: {e}")
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
