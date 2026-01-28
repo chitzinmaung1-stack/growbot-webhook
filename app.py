@@ -4,7 +4,7 @@ from flask import Flask, request
 import requests
 from dotenv import load_dotenv
 
-# .env file ထဲက အချက်အလက်တွေကို load လုပ်ပါ (Local စမ်းသပ်မှုအတွက်)
+# .env file ထဲက အချက်အလက်တွေကို load လုပ်ပါ
 load_dotenv()
 
 app = Flask(__name__)
@@ -35,9 +35,9 @@ def webhook():
                     
                     if message_text:
                         try:
-                            # Groq (Llama 3) AI ဆီက အဖြေတောင်းခြင်း
+                            # Groq (Llama 3.1) AI ဆီက အဖြေတောင်းခြင်း
                             completion = client.chat.completions.create(
-                                model="llama3-8b-8192", 
+                                model="llama-3.1-8b-instant", 
                                 messages=[
                                     {"role": "system", "content": "မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးပျူငှာစွာ မြန်မာလို စာပြန်ပေးပါ။"},
                                     {"role": "user", "content": message_text}
@@ -46,7 +46,7 @@ def webhook():
                             ai_answer = completion.choices[0].message.content
                             send_message(sender_id, ai_answer)
                         except Exception as e:
-                            print(f"Error in Groq API: {e}")
+                            print(f"Error: {e}")
     return "ok", 200
 
 def send_message(recipient_id, message_text):
@@ -57,9 +57,7 @@ def send_message(recipient_id, message_text):
         "recipient": {"id": recipient_id},
         "message": {"text": message_text}
     }
-    response = requests.post("https://graph.facebook.com/v12.0/me/messages", params=params, headers=headers, json=data)
-    if response.status_code != 200:
-        print(f"Error sending message: {response.text}")
+    requests.post("https://graph.facebook.com/v12.0/me/messages", params=params, headers=headers, json=data)
 
 if __name__ == "__main__":
     app.run(port=5000)
