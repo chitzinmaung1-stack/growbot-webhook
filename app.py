@@ -35,7 +35,7 @@ def webhook():
 
 def call_gemini_direct(prompt):
     # Google Gemini Direct API Endpoint
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
@@ -46,9 +46,10 @@ def call_gemini_direct(prompt):
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
         return result['candidates'][0]['content']['parts'][0]['text']
-    except Exception as e:
+        except Exception as e:
+        print(f"Gemini API Error: {e}") # ဒါက Log ထဲမှာ ဘာလို့မရလဲဆိုတာ အတိအကျ ပြပေးမှာပါ
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
-
+    
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
     payload = {"recipient": {"id": recipient_id}, "message": {"text": message_text}}
