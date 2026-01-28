@@ -34,8 +34,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # Model ID ကို flash-8b သို့ ပြောင်းလဲပြီး v1beta path ကို သုံးထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={GOOGLE_API_KEY}"
+    # v1beta နဲ့ gemini-1.5-flash ကိုပဲ သုံးထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
@@ -53,7 +53,7 @@ def call_gemini_direct(prompt):
     except Exception as e:
         print(f"Connection Error: {e}")
         return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
-
+        
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
     payload = {"recipient": {"id": recipient_id}, "message": {"text": message_text}}
