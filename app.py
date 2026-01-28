@@ -34,8 +34,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    # Model ID ကို -latest ထည့်ပြီး အပြည့်အစုံ ပြောင်းထားပါတယ်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GOOGLE_API_KEY}"
+    # Model ID ကို flash-8b သို့ ပြောင်းလဲပြီး
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{
