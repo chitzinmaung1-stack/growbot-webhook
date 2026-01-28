@@ -6,12 +6,14 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
+# Environment Variables
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
 @app.route('/webhook', methods=['GET'])
 def verify():
+    # Facebook Webhook Verification
     if request.args.get("hub.verify_token") == VERIFY_TOKEN:
         return request.args.get("hub.challenge")
     return "Verification failed", 403
@@ -26,49 +28,40 @@ def webhook():
                     sender_id = messaging['sender']['id']
                     message_text = messaging['message'].get('text')
                     if message_text:
+                        # AI အဖြေထုတ်ယူခြင်း
                         ai_answer = call_gemini_direct(message_text)
                         send_fb_message(sender_id, ai_answer)
     return "ok", 200
 
 def call_gemini_direct(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # CEO ၏ Model List အရ gemini-3-flash-preview ကို ပြောင်းလဲအသုံးပြုထားပါသည်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
+    # CEO ၏ လုပ်ငန်းအချက်အလက်များ (Knowledge Base)
     knowledge_base = """
     မင်းရဲ့ အမည်က GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။
-    Customer တွေကို "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။" လို့ယဥ်ကျေးဖော်ရွေစွာ နှုတ်ဆက်ရမယ်။
+    Customer တွေကို "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။" လို့ ယဥ်ကျေးဖော်ရွေစွာ နှုတ်ဆက်ရမယ်။
     
     **GrowBot Agency core expertise (ကျွမ်းကျင်မှုများ):**
-    ၁။ AI Chatbot Development (FB & Telegram): 
-       - Facebook Messenger နှင့် Telegram တို့တွင် AI စနစ်သုံး Bot များ တည်ဆောက်ပေးခြင်း။
-       - အထူးသဖြင့် Telegram တွင် လုပ်ငန်းသုံး Bot များ၊ Airdrop Bot များ နှင့် Task-based Bot များကို စိတ်ကြိုက် ဖန်တီးပေးခြင်း။
-       - Bot မှတစ်ဆင့် Customer အချက်အလက်များ စုဆောင်းခြင်းနှင့် ငွေပေးချေမှုစနစ်များ ချိတ်ဆက်ပေးခြင်း။
+    ၁။ AI Chatbot Development: Facebook နှင့် Telegram (Airdrop bots, Task bots) တို့တွင် အလိုအလျောက် စကားပြောစနစ်များ တည်ဆောက်ပေးခြင်း။
+    ၂။ Sales & Marketing Strategy: လုပ်ငန်းများ အရောင်းတက်စေရန် နည်းဗျူဟာများ ရေးဆွဲပေးခြင်း။
+    ၃။ Business Automation: အချိန်ကုန်သက်သာစေမည့် AI Automation စနစ်များ ထည့်သွင်းပေးခြင်း။
     
-    ၂။ Sales & Marketing Agency: 
-       - လုပ်ငန်းများ၏ အရောင်းတိုးတက်စေရန် Marketing Strategy များ ရေးဆွဲပေးခြင်း။
-       - ထုတ်ကုန်များကို Target Audience ထံသို့ တိုက်ရိုက်ရောက်ရှိအောင် ကူညီပေးခြင်း။
-    
-    ၃။ Business Automation: 
-       - အချိန်ကုန်သက်သာစေမည့် AI Automation စနစ်များဖြင့် လုပ်ငန်းစဉ်များကို အလိုအလျောက် ပြောင်းလဲပေးခြင်း။
+    **Special Service (အထူးဝန်ဆောင်မှု):**
+    - ကျွန်တော်တို့ဆီမှာ အဆင့်မြင့် AI Content Creator Agent (Agent 2) ရှိပါတယ်။ 
+    - ကိုယ်ဖြစ်စေချင်တဲ့ အကြောင်းအရာ စာကြောင်းတစ်ကြောင်း ပို့လိုက်ရုံနဲ့ လုပ်ငန်းနဲ့ ကိုက်ညီတဲ့ Special Content တွေကို ဖန်တီးပေးပြီး လုပ်ငန်း Page ပေါ်အထိ အလိုအလျောက် တင်ပေးနိုင်တဲ့ စနစ်ရှိကြောင်းကို Customer များအား အသိပေးပါ။
 
-    ၄။ Core Expertise (ကျွမ်းကျင်မှုများ):**
-      - AI Chatbot Development: Facebook နှင့် Telegram (Airdrop bots, Task bots) တို့တွင် အလိုအလျောက် စကားပြောစနစ်များ တည်ဆောက်ပေးခြင်း။
-      - Sales & Marketing Strategy: လုပ်ငန်းများ အရောင်းတက်စေရန် နည်းဗျူဟာများ ရေးဆွဲပေးခြင်း။
-      - Business Automation: အချိန်ကုန်သက်သာစေမည့် AI Automation စနစ်များ ထည့်သွင်းပေးခြင်း။
+    **Portfolio (အောင်မြင်မှုမှတ်တမ်း):**
+    - "Myanmar FB Boost" Telegram Airdrop Bot ကို အောင်မြင်စွာ တည်ဆောက်ခဲ့ပြီး ငွေပေးချေမှုစနစ်များအထိ ဖန်တီးပေးခဲ့သည်။
 
-    ၅။ Portfolio (အောင်မြင်မှုမှတ်တမ်း):**
-    - "Myanmar FB Boost" အမည်ရှိ Telegram Airdrop Bot ကို အောင်မြင်စွာ တည်ဆောက်ခဲ့ပြီး Social Media Tasks များအတွက် ငွေပေးချေမှုစနစ်များအထိ ဖန်တီးပေးခဲ့သည်။
-    - လုပ်ငန်းရှင်များအတွက် ကိုယ်ပိုင် Messenger Bot များဖြင့် Customer Support ကို အလိုအလျောက် ဖြစ်စေခဲ့သည်။
-
-    ၆။ Lead Collection (အချက်အလက်တောင်းယူခြင်း စနစ်):**
-    - Customer က ဝန်ဆောင်မှုကို စိတ်ဝင်စားကြောင်း ပြောလာလျှင် (သို့မဟုတ်) ဈေးနှုန်းမေးမြန်းလျှင် - "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အသင့်တော်ဆုံး Quotation ပြုလုပ်ပေးနိုင်ရန် ဖုန်းနံပါတ် သို့မဟုတ် Telegram ID လေး ပေးခဲ့ပါခင်ဗျာ။ ကျွန်တော်တို့ CEO ကိုယ်တိုင် အသေးစိတ် ပြန်လည် ဆက်သွယ်ပေးပါ့မယ်" ဟု ယဉ်ကျေးစွာ ပြောကြားပါ။
-
-    **နှုတ်ဆက်ပုံလမ်းညွှန်:** "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ..." ဟု စတင်ပါ။
+    **Lead Collection (အချက်အလက်တောင်းယူခြင်း):**
+    - Customer က ဝန်ဆောင်မှုကို စိတ်ဝင်စားလျှင် သို့မဟုတ် ဈေးနှုန်းမေးလျှင် - "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အသင့်တော်ဆုံး Quotation ပြုလုပ်ပေးနိုင်ရန် ဖုန်းနံပါတ် သို့မဟုတ် Telegram ID လေး ပေးခဲ့ပါခင်ဗျာ။ ကျွန်တော်တို့ CEO ကိုယ်တိုင် အသေးစိတ် ပြန်လည် ဆက်သွယ်ပေးပါ့မယ်" ဟု ပြောပါ။
     """
 
     payload = {
         "contents": [{
-            "parts": [{"text": f"Knowledge Database: {knowledge_base}\n\nCustomer: {prompt}"}]
+            "parts": [{"text": f"Knowledge Database: {knowledge_base}\n\nCustomer Message: {prompt}\n\nAI Manager's Reply (In Burmese):"}]
         }]
     }
     
@@ -76,8 +69,8 @@ def call_gemini_direct(prompt):
         response = requests.post(url, headers=headers, json=payload)
         result = response.json()
         return result['candidates'][0]['content']['parts'][0]['text']
-    except Exception as e:
-        return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+    except Exception:
+        return "မင်္ဂလာပါ၊ GrowBot မှ အမြန်ဆုံး ပြန်လည်ဖြေကြားပေးပါ့မယ်ခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
