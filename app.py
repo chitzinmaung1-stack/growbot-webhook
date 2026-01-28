@@ -1,16 +1,16 @@
 import os
-from groq import Groq
+import google.generativeai as genai
 from flask import Flask, request
 import requests
 from dotenv import load_dotenv
 
-# .env file ထဲက အချက်အလက်တွေကို load လုပ်ပါ
 load_dotenv()
-
 app = Flask(__name__)
 
-# Groq Setup
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# Gemini Setup (Llama အစား Gemini ကို ပြောင်းလဲအသုံးပြုထားပါတယ်)
+# Render Environment ထဲမှာ GOOGLE_API_KEY ဆိုပြီး သေချာထည့်ပေးပါ
+genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Facebook Configuration
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
@@ -34,25 +34,17 @@ def webhook():
                     
                     if message_text:
                         try:
-                            # AI Model ကို စနစ်တကျ ခိုင်းစေခြင်း
-                            completion = client.chat.completions.create(
-                                model="llama-3.1-8b-instant", 
-                                messages=[
-                                    {
-                                        "role": "system", 
-                                        "content": """မင်းက GrowBot Agency ရဲ့ "အရောင်းနှင့် ဆက်ဆံရေး Manager" (Agent 1) ဖြစ်တယ်။
-                                        မင်းရဲ့ နာမည်က "10K" ဖြစ်တယ်။
-                                        အောက်ပါ စည်းကမ်းချက်များကို 100% တိကျစွာလိုက်နာပါ -
-                                        ၁။ စာပြန်ရင် လိုရင်းတိုရှင်းဖြစ်ရမယ်။ သဘာဝကျတဲ့ မြန်မာစကား Unicode ကိုပဲ သုံးပါ။
-                                        ၂။ တစ်ဖက်က Hello လို့ နှုတ်ဆက်ရင် "မင်္ဂလာပါ လူကြီးမင်းခင်ဗျာ၊ GrowBot Agency မှ ကြိုဆိုပါတယ်" လို့ စတင်ပါ။
-                                        ၃။ မင်းရဲ့ အဓိက အလုပ်က GrowBot Agency ရဲ့ AI Chatbot ဝန်ဆောင်မှုနဲ့ Automation ဝန်ဆောင်မှုတွေကို မိတ်ဆက်ပေးဖို့ ဖြစ်တယ်။
-                                        ၄။ စာလုံးပေါင်း သတ်ပုံများကို အထူးဂရုစိုက်ပါ။ ဗျည်းအက္ခရာများနှင့် အသတ်များကို စနစ်တကျ သုံးပါ။
-                                        ၅။ Customer တွေရဲ့ မေးခွန်းတွေကို မက်းရဲ့ အဓိက အလုပ် နဲ့သက်ဆိုင်ရာတွေနဲ့ပဲ Customerတွေကို"လူကြီးမင်း" ဟုသာ သုံးပြီး ယဉ်ကျေးပျူငှာစွာ ဖြေကြားပါ။"""
-                                    },
-                                    {"role": "user", "content": message_text}
-                                ]
+                            # Agent 1 ၏ System Prompt ကို အားကောင်းအောင် ပြင်ဆင်ထားပါတယ်
+                            prompt = f"""မင်းက GrowBot Agency ရဲ့ အရောင်းနှင့် ဆက်ဆံရေး Manager (Agent 1) ဖြစ်တယ်။ 
+                            လူကြီးမင်းလို့ သုံးနှုန်းပြီး ယဉ်ကျေးပျူငှာစွာ မြန်မာလို ပြန်ဖြေပေးပါ။ 
+                            GrowBot Agency က AI Chatbot နဲ့ Automation ဝန်ဆောင်မှု ပေးကြောင်းကိုသာ ဖြေပါ။
+                            Customer မေးခွန်း - {message_text}"""
+                            
+                            response = model.generate_content(
+                                prompt,
+                                generation_config=genai.types.GenerationConfig(temperature=0.3)
                             )
-                            ai_answer = completion.choices[0].message.content
+                            ai_answer = response.text
                             send_message(sender_id, ai_answer)
                         except Exception as e:
                             print(f"Error: {e}")
@@ -65,7 +57,8 @@ def send_message(recipient_id, message_text):
         "recipient": {"id": recipient_id},
         "message": {"text": message_text}
     }
-    requests.post("https://graph.facebook.com/v12.0/me/messages", params=params, headers=headers, json=data)
+    requests.post("https://graph.facebook.com/v21.0/me/messages", params=params, headers=headers, json=data)
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
