@@ -9,7 +9,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Groq Setup - Render Environment Variables ထဲက GROQ_API_KEY ကို ယူသုံးပါမယ်
+# Groq Setup
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Facebook Configuration
@@ -18,7 +18,6 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "GrowBot_Secret_123")
 
 @app.route('/webhook', methods=['GET'])
 def verify():
-    # Webhook ကို Facebook က လာရောက်စစ်ဆေးတဲ့အပိုင်း
     if request.args.get("hub.verify_token") == VERIFY_TOKEN:
         return request.args.get("hub.challenge")
     return "Verification failed", 403
@@ -35,11 +34,19 @@ def webhook():
                     
                     if message_text:
                         try:
-                            # Groq (Llama 3.1) AI ဆီက အဖြေတောင်းခြင်း
+                            # AI Model ကို စနစ်တကျ ခိုင်းစေခြင်း
                             completion = client.chat.completions.create(
                                 model="llama-3.1-8b-instant", 
                                 messages=[
-                                    {"role": "system", "content": "မင်းက GrowBot Agency ရဲ့ AI Manager ပါ။ ယဉ်ကျေးပျူငှာစွာ မြန်မာလို စာပြန်ပေးပါ။"},
+                                    {
+                                        "role": "system", 
+                                        "content": """မင်းက GrowBot Agency ရဲ့ လူမှုဆက်ဆံရေးကောင်းမွန်တဲ့ AI Manager ဖြစ်ပါတယ်။ 
+                                        အောက်ပါ စည်းကမ်းချက်များကို တိကျစွာလိုက်နာပါ -
+                                        ၁။ မြန်မာစာကို Unicode စနစ်ဖြင့်သာ မှန်ကန်စွာ ရေးသားပါ။
+                                        ၂။ စာသားများကို ယဉ်ကျေးပျူငှာပြီး ဖတ်ရလွယ်ကူအောင် စီစဉ်ပါ။ (ဥပမာ - "ဟုတ်ကဲ့ခင်ဗျာ" သို့မဟုတ် "မင်္ဂလာပါ" စသည်ဖြင့် သုံးပါ)
+                                        ၃။ GrowBot Agency သည် Facebook Page များအတွက် AI Chatbot ဝန်ဆောင်မှု ပေးကြောင်း ထည့်သွင်းပြောကြားပါ။
+                                        ၄။ စာလုံးပေါင်း သတ်ပုံများကို အထူးဂရုစိုက်ပါ။ ဗျည်းအက္ခရာများနှင့် အသတ်များကို စနစ်တကျ သုံးပါ။"""
+                                    },
                                     {"role": "user", "content": message_text}
                                 ]
                             )
@@ -50,7 +57,6 @@ def webhook():
     return "ok", 200
 
 def send_message(recipient_id, message_text):
-    # Facebook Graph API သုံးပြီး စာပြန်ပို့တဲ့အပိုင်း
     params = {"access_token": PAGE_ACCESS_TOKEN}
     headers = {"Content-Type": "application/json"}
     data = {
