@@ -33,8 +33,8 @@ def webhook():
 
 # CEO အရင်က အသုံးပြုခဲ့သော Code အပိုင်း (Function)
 def call_gemini_direct(prompt):
-    # Model ID ကို gemini-1.5-flash ဖြင့် အသေချာဆုံး ချိတ်ဆက်ထားသည်
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    # Model ID ကို gemini-2.5-flash ဖြင့် အသေချာဆုံး ချိတ်ဆက်ထားသည်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     knowledge_base = """
