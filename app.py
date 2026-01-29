@@ -10,6 +10,9 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
+# User အလိုက် စကားပြောမှတ်ဉာဏ် သိမ်းဆည်းရန်
+chat_storage = {}
+
 @app.route('/webhook', methods=['GET'])
 def verify():
     if request.args.get("hub.verify_token") == VERIFY_TOKEN:
@@ -22,45 +25,44 @@ def webhook():
     if data.get('object') == 'page':
         for entry in data.get('entry', []):
             for messaging in entry.get('messaging', []):
-                sender_id = messaging['sender']['id']
+                sender_id = str(messaging['sender']['id'])
                 if messaging.get('message'):
                     message_text = messaging['message'].get('text')
                     if message_text:
-                        # အမည်ကို call_gemini_direct လို့ တိတိကျကျ ပြောင်းလဲခေါ်ဆိုထားပါသည်
-                        ai_answer = call_gemini_direct(message_text)
+                        if sender_id not in chat_storage:
+                            chat_storage[sender_id] = []
+                        
+                        # AI အဖြေတောင်းခြင်း (History ပါဝင်သည်)
+                        ai_answer = call_senior_ai_manager(message_text, chat_storage[sender_id])
+                        
+                        # History သိမ်းဆည်းခြင်း
+                        chat_storage[sender_id].append({"role": "user", "parts": [{"text": message_text}]})
+                        chat_storage[sender_id].append({"role": "model", "parts": [{"text": ai_answer}]})
+                        chat_storage[sender_id] = chat_storage[sender_id][-6:] # နောက်ဆုံး ၃ ကြိမ်အသွားအပြန်မှတ်မည်
+                        
                         send_fb_message(sender_id, ai_answer)
     return "ok", 200
 
-# CEO အရင်က အသုံးပြုခဲ့သော Code အပိုင်း (Function)
-def call_gemini_direct(prompt):
-    # Model ID ကို gemini-2.5-flash ဖြင့် အသေချာဆုံး ချိတ်ဆက်ထားသည်
+def call_senior_ai_manager(prompt, history):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
-    headers = {'Content-Type': 'application/json'}
     
-    knowledge_base = """
-    မင်းက GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
-    
-    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က "မင်္ဂလာပါ" လို့ စတင်နှုတ်ဆက်ရင် ဖြစ်စေ၊ စကားစပြောရင်ဖြစ်စေ အောက်ပါအတိုင်း အမြဲနှုတ်ဆက်ပါ။
-    "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။"
+    KNOWLEDGE_BASE = """
+    မင်းက GrowBot Agency ရဲ့ Senior AI Manager ဖြစ်တယ်။ 
+    - Customer က မင်္ဂလာပါလို့ စနှုတ်ဆက်မှသာ အပြည့်အစုံ နှုတ်ဆက်ပါ။ စကားဝိုင်းထဲ ရောက်နေရင် ထပ်မနှုတ်ဆက်ပါနဲ့။
+    - Customer ပြောတာတွေကို သေချာမှတ်သားပြီး အဖြေပေးပါ။ (Memory ပါဝင်သည်)
+    - Services: All-in-One (180,000 MMK), AI Video (250,000 MMK)
     """
 
     payload = {
-        "contents": [{
-            "parts": [{"text": f"{knowledge_base}\n\nCustomer: {prompt}"}]
-        }]
+        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_BASE}\n\nCustomer: {prompt}"}]}]
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, json=payload, timeout=25)
         result = response.json()
-        if 'candidates' in result and result['candidates']:
-            return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            print(f"DEBUG - Full Response: {result}")
-            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
-    except Exception as e:
-        print(f"Error: {e}")
-        return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+        return result['candidates'][0]['content']['parts'][0]['text']
+    except:
+        return "ခေတ္တစောင့်ပေးပါခင်ဗျာ၊ အကောင်းဆုံးဗျူဟာကို စဉ်းစားနေလို့ပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
