@@ -35,7 +35,7 @@ def webhook():
                                 chat_history[sender_id] = []
                             
                             current_history = chat_history[sender_id]
-                            ai_answer = call_senior_ai_manager(message_text, current_history)
+                            ai_answer = call_gemini_direct(message_text, current_history)
                             
                             # History update (နောက်ဆုံး အသွားအပြန် ၂ ကြိမ်သာမှတ်မည် - Error နည်းရန်)
                             current_history.append({"role": "user", "parts": [{"text": message_text}]})
