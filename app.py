@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
-# Environment Variables (Render တွင် ဖြည့်သွင်းရန်)
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
@@ -24,46 +23,43 @@ def webhook():
         for entry in data.get('entry', []):
             for messaging in entry.get('messaging', []):
                 sender_id = messaging['sender']['id']
-                
-                # ၁။ Get Started Button သို့မဟုတ် ခလုတ်များကို နှိပ်ခြင်းကို စစ်ဆေးခြင်း
-                if messaging.get("postback"):
-                    payload = messaging["postback"].get("payload")
-                    if payload == "GET_STARTED_PAYLOAD":
-                        welcome_text = "မင်္ဂလာပါ CEO ခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အဖြစ် ကြိုဆိုပါတယ်။ လူကြီးမင်းကို ဘယ်လိုကူညီပေးရမလဲခင်ဗျာ?"
-                        send_fb_message(sender_id, welcome_text)
-                
-                # ၂။ ပုံမှန် စာသားပေးပို့မှုကို စစ်ဆေးခြင်း
-                elif messaging.get('message'):
+                if messaging.get('message'):
                     message_text = messaging['message'].get('text')
                     if message_text:
-                        ai_answer = call_gemini_direct(message_text)
-                        send_fb_message(sender_id, ai_answer)
-                        
+                        try:
+                            ai_answer = call_gemini_2_flash(message_text)
+                            send_fb_message(sender_id, ai_answer)
+                        except Exception as e:
+                            # Error ဖြစ်ရင် logs မှာ အတိအကျကြည့်လို့ရအောင် လုပ်ထားပါတယ်
+                            print(f"Deployment Error: {e}")
+                            send_fb_message(sender_id, "စနစ်ကို ခေတ္တစစ်ဆေးနေပါတယ်ခင်ဗျာ။")
     return "ok", 200
 
-def call_gemini_direct(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
+def call_gemini_2_flash(prompt):
+    # Gemini 2.0 Flash Model URL (Beta endpoint)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    system_instruction = """
-    You are the AI Manager of GrowBot Agency. Answer in Burmese.
-    Keep it natural, professional, and short. Use polite particles like 'ခင်ဗျာ'.
-    Only share specific business details from the database if relevant to the question.
-    KNOWLEDGE: AI Chatbots (FB/Telegram), Marketing Strategy, Automation, Special Content Agent 2.
-    """
-
+    system_instruction = "You are GrowBot AI Manager. Be smart, concise, and professional in Burmese. Database: 1.Chatbots, 2.Strategy, 3.Automation, 4.Special Agent 2."
+    
     payload = {
         "contents": [{
-            "parts": [{"text": f"Instruction: {system_instruction}\n\nCustomer: {prompt}\n\nAI Manager's Reply:"}]
+            "parts": [{"text": f"System: {system_instruction}\nCustomer: {prompt}"}]
         }]
     }
     
+    response = requests.post(url, headers=headers, json=payload)
+    result = response.json()
+    
+    # API ကနေ အဖြေပြန်လာတဲ့ပုံစံကို သေချာစစ်ဆေးဖတ်ယူခြင်း
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        result = response.json()
-        return result['candidates'][0]['content']['parts'][0]['text']
-    except:
-        return "မင်္ဂလာပါ၊ GrowBot Agency မှ ကူညီရန် အသင့်ရှိနေပါတယ်ခင်ဗျာ။"
+        if 'candidates' in result and len(result['candidates']) > 0:
+            return result['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"API Response Error: {result}")
+            return "လူကြီးမင်း မေးခွန်းကို ကျွန်တော် နားလည်အောင် ကြိုးစားနေပါတယ်ခင်ဗျာ။"
+    except (KeyError, IndexError):
+        return "ဝန်ဆောင်မှုများအကြောင်း သိလိုပါက တစ်ချက်လောက် ထပ်မေးပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
