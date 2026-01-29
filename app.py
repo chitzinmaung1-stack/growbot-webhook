@@ -10,7 +10,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
-# စကားပြောမှတ်ဉာဏ်ကို ပိုမိုသန့်ရှင်းအောင် ထိန်းသိမ်းမည်
+# စကားပြောမှတ်ဉာဏ်ကို user_id အလိုက် စနစ်တကျ သိမ်းဆည်းမည်
 chat_history = {}
 
 @app.route('/webhook', methods=['GET'])
@@ -25,53 +25,57 @@ def webhook():
     if data.get('object') == 'page':
         for entry in data.get('entry', []):
             for messaging in entry.get('messaging', []):
-                sender_id = messaging['sender']['id']
+                sender_id = str(messaging['sender']['id']) # ID ကို String အဖြစ် အသေအချာပြောင်းပါ
                 if messaging.get('message'):
                     message_text = messaging['message'].get('text')
                     if message_text:
                         try:
-                            # Memory ကို ယူပြီး ရှင်းလင်းစွာ ပေးပို့မည်
-                            history = chat_history.get(sender_id, [])
-                            ai_answer = call_senior_ai_manager(message_text, history)
+                            # User တဦးချင်းစီ၏ history ကို ခေါ်ယူခြင်း
+                            if sender_id not in chat_history:
+                                chat_history[sender_id] = []
                             
-                            # History ကို update လုပ်ပါ (နောက်ဆုံး အပြန်အလှန် ၃ ကြိမ်သာ မှတ်မည် - Error ကင်းရန်)
-                            history.append({"role": "user", "parts": [{"text": message_text}]})
-                            history.append({"role": "model", "parts": [{"text": ai_answer}]})
-                            chat_history[sender_id] = history[-6:] 
+                            current_history = chat_history[sender_id]
+                            ai_answer = call_senior_ai_manager(message_text, current_history)
+                            
+                            # History update (နောက်ဆုံး အသွားအပြန် ၂ ကြိမ်သာမှတ်မည် - Error နည်းရန်)
+                            current_history.append({"role": "user", "parts": [{"text": message_text}]})
+                            current_history.append({"role": "model", "parts": [{"text": ai_answer}]})
+                            chat_history[sender_id] = current_history[-4:] 
                             
                             send_fb_message(sender_id, ai_answer)
                         except Exception as e:
-                            print(f"Detail Error: {e}")
-                            send_fb_message(sender_id, "လူကြီးမင်း၏ မေးခွန်းကို အသေချာဆုံး အဖြေပေးနိုင်ရန် စနစ်ကို ပြန်လည်ညှိနှိုင်းနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။")
+                            print(f"Server Error Log: {e}")
+                            # Error ဖြစ်လျှင်ပင် customer စောင့်မနေရအောင် အခြေခံအဖြေတခုပေးခြင်း
+                            fallback_msg = "မင်္ဂလာပါခင်ဗျာ၊ လူကြီးမင်း၏ မေးမြန်းမှုကို Senior Manager ထံသို့ လွှဲပြောင်းပေးနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။"
+                            send_fb_message(sender_id, fallback_msg)
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
-    # Gemini 3 Flash Preview URL
+    # Gemini 3 Flash URL
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
     
     KNOWLEDGE_DB = """
     ROLE: Senior AI Strategy Consultant of GrowBot Agency.
     TONE: Professional & Strategic.
     SERVICES: 
-    1. All-in-One (180,000 MMK) - Chatbot focus.
+    1. All-in-One (180,000 MMK) - Content & Chatbot focus.
     2. Video Power Pack (250,000 MMK) - AI Video focus.
     SPECIAL: 1 Week Trial, Myanmar FB Boost Success Case.
     """
 
-    # Payload ကို ပိုမို တည်ငြိမ်သော Format သို့ ပြောင်းလဲခြင်း
+    # Payload format ကို ပိုမိုခိုင်မာအောင် ပြင်ဆင်ခြင်း
     payload = {
-        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_DB}\n\nCustomer Message: {prompt}"}]}]
+        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_DB}\n\nCustomer: {prompt}"}]}]
     }
     
     response = requests.post(url, json=payload, timeout=20)
     result = response.json()
     
-    if 'candidates' in result:
+    if 'candidates' in result and len(result['candidates']) > 0:
         return result['candidates'][0]['content']['parts'][0]['text']
     else:
-        # API ဘက်က error ပြလာရင် logs မှာ အတိအကျပြရန်
-        print(f"API Detailed Error: {result}")
-        raise Exception("API Response Error")
+        print(f"Detailed API Response: {result}")
+        return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အဆီလျော်ဆုံး ဗျူဟာကို စဉ်းစားပေးနေပါသည်၊ ခဏလေး စောင့်ပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
