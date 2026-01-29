@@ -35,9 +35,9 @@ def webhook():
                             send_fb_message(sender_id, "စနစ်ကို ခေတ္တစစ်ဆေးနေပါတယ်ခင်ဗျာ။")
     return "ok", 200
 
-def call_gemini_2_flash(prompt):
-    # Gemini 2.5 Flash Model URL (Beta endpoint)
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
+def call_gemini_3_flash(prompt):
+    # Gemini 3 Flash Model URL (Beta endpoint)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     system_instruction = "You are GrowBot AI Manager. Be smart, concise, and professional in Burmese. Database: 1.Chatbots, 2.Strategy, 3.Automation, 4.Special Agent 2."
