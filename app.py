@@ -36,8 +36,8 @@ def webhook():
     return "ok", 200
 
 def call_gemini_2_flash(prompt):
-    # Gemini 2.0 Flash Model URL (Beta endpoint)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
+    # Gemini 2.5 Flash Model URL (Beta endpoint)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     system_instruction = "You are GrowBot AI Manager. Be smart, concise, and professional in Burmese. Database: 1.Chatbots, 2.Strategy, 3.Automation, 4.Special Agent 2."
