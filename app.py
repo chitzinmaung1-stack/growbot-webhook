@@ -51,8 +51,8 @@ def webhook():
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
-    # gemini-2.0-flash-exp URL
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
+    # Gemini 1.5 Flash (ပိုမိုတည်ငြိမ်ပြီး အခုလက်ရှိ အလုပ်လုပ်နေသော URL)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
     KNOWLEDGE_DB = """
     ROLE: Senior AI Strategy Consultant of GrowBot Agency.
@@ -63,7 +63,6 @@ def call_senior_ai_manager(prompt, history):
     SPECIAL: 1 Week Trial, Myanmar FB Boost Success Case.
     """
 
-    # Payload format ကို ပိုမိုခိုင်မာအောင် ပြင်ဆင်ခြင်း
     payload = {
         "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_DB}\n\nCustomer: {prompt}"}]}]
     }
@@ -71,11 +70,12 @@ def call_senior_ai_manager(prompt, history):
     response = requests.post(url, json=payload, timeout=20)
     result = response.json()
     
-    if 'candidates' in result and len(result['candidates']) > 0:
+    if 'candidates' in result:
         return result['candidates'][0]['content']['parts'][0]['text']
     else:
-        print(f"Detailed API Response: {result}")
-        return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အဆီလျော်ဆုံး ဗျူဟာကို စဉ်းစားပေးနေပါသည်၊ ခဏလေး စောင့်ပေးပါခင်ဗျာ။"
+        # Error ထပ်တက်ပါက logs မှာ အသေအချာ ပြန်ကြည့်နိုင်ရန်
+        print(f"Detailed API Response Error: {result}")
+        return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အကောင်းဆုံး ဗျူဟာကို စဉ်းစားပေးနေပါသည်၊ ခဏလေး စောင့်ပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
