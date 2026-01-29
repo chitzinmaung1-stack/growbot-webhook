@@ -36,17 +36,36 @@ def webhook():
     return "ok", 200
 
 def call_gemini_3_flash(prompt):
-    # Gemini 3 Flash Model URL (Beta endpoint)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    system_instruction = "You are GrowBot AI Manager. Be smart, concise, and professional in Burmese. Database: 1.Chatbots, 2.Strategy, 3.Automation, 4.Special Agent 2."
+    # --- ဤနေရာတွင် မိမိလုပ်ငန်းအကြောင်းအရာများကို အသေးစိတ် ဖြည့်စွက်နိုင်ပါသည် ---
+    KNOWLEDGE_DATABASE = """
+    GrowBot Agency ဝန်ဆောင်မှုများ အသေးစိတ်-
+    ၁။ AI Chatbot Development: Facebook Messenger နှင့် Telegram (Airdrop/Task bots) များတွင် ၂၄ နာရီ အလိုအလျောက် အရောင်းပိတ်ပေးမည့် စနစ်များ။
+    ၂။ Sales & Marketing Strategy: လုပ်ငန်းများ၏ အမြတ်အစွန်း တိုးတက်လာစေရန် နည်းဗျူဟာများ ရေးဆွဲပေးခြင်း။
+    ၃။ Business Automation: လူအင်အား သုံးစရာမလိုဘဲ လုပ်ငန်းစဉ်များကို AI ဖြင့် အလိုအလျောက် လည်ပတ်စေခြင်း။
+    ၄။ Special Content Agent 2: စာတစ်ကြောင်း ပို့ရုံဖြင့် ပရော်ဖက်ရှင်နယ် Marketing Post နှင့် ပုံများကို Page ပေါ် တိုက်ရိုက်တင်ပေးသည့် စနစ်။
+    အောင်မြင်မှုမှတ်တမ်း: Myanmar FB Boost (Telegram Airdrop Bot) ကို အောင်မြင်စွာ တည်ဆောက်ခဲ့သည်။
+    """
+
+    system_instruction = f"""
+    You are the Senior AI Manager of GrowBot Agency. 
+    Use the following Knowledge Database to answer customer questions precisely and professionally in Burmese.
+    Combine your internal reasoning with this data.
+    
+    DATABASE:
+    {KNOWLEDGE_DATABASE}
+    """
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"System: {system_instruction}\nCustomer: {prompt}"}]
+            "parts": [{"text": f"Instruction: {system_instruction}\n\nCustomer Message: {prompt}"}]
         }]
     }
+    
+    # ... (ကျန်တဲ့ request ပိုင်းက အတူတူပါပဲ) ...
+
     
     response = requests.post(url, headers=headers, json=payload)
     result = response.json()
