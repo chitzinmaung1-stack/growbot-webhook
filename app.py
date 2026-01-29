@@ -50,37 +50,36 @@ def webhook():
                             send_fb_message(sender_id, fallback_msg)
     return "ok", 200
 
-def call_senior_ai_manager(prompt, history):
-    # Gemini 2.0 Flash Version (v1beta version အတွက် အမှန်ကန်ဆုံး URL)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GOOGLE_API_KEY}"
+def call_gemini_direct(prompt):
+    # Model ID ကို gemini-1.5-flash လို့ပဲ သုံးပြီး URL ကို အမှန်ကန်ဆုံး ပြင်ထားပါတယ်
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
+    headers = {'Content-Type': 'application/json'}
     
-    KNOWLEDGE_DB = """
-    ROLE: Senior AI Strategy Consultant of GrowBot Agency.
-    TONE: Professional & Strategic.
-    SERVICES: 
-    1. All-in-One (180,000 MMK) - Content & Chatbot focus.
-    2. Video Power Pack (250,000 MMK) - AI Video focus.
-    SPECIAL: 1 Week Trial, Myanmar FB Boost Success Case.
+    knowledge_base = """
+    မင်းက GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
+    
+    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က "မင်္ဂလာပါ" လို့ စတင်နှုတ်ဆက်ရင် ဖြစ်စေ၊ စကားစပြောရင်ဖြစ်စေ အောက်ပါအတိုင်း အမြဲနှုတ်ဆက်ပါ။
+    "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။"
     """
 
     payload = {
-        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_DB}\n\nCustomer Message: {prompt}"}]}]
+        "contents": [{
+            "parts": [{"text": f"{knowledge_base}\n\nCustomer: {prompt}"}]
+        }]
     }
     
     try:
-        response = requests.post(url, json=payload, timeout=20)
+        response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        
-        if 'candidates' in result:
+        if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            # logs မှာ အမှားကို အသေးစိတ် ကြည့်နိုင်ရန်
-            print(f"Detailed API Response Error: {result}")
-            return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အဆီလျော်ဆုံး ဗျူဟာကို စဉ်းစားပေးနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။"
+            # တကယ်လို့ 404 ထပ်တက်ရင် ဘာကြောင့်လဲဆိုတာ အတိအကျ မြင်ရအောင် Logs ထုတ်ခြင်း
+            print(f"DEBUG - Full Response: {result}")
+            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
     except Exception as e:
-        print(f"Request Error: {e}")
-        return "စနစ်ကို ခေတ္တစစ်ဆေးနေပါတယ်ခင်ဗျာ။"
-
+        return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+        
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
     payload = {"recipient": {"id": recipient_id}, "message": {"text": message_text}}
