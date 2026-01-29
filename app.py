@@ -6,9 +6,14 @@ from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
 
+# Environment Variables
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+
+# စကားပြောမှတ်ဉာဏ် (Memory) အတွက် ရိုးရှင်းသော Dictionary တစ်ခု သုံးထားပါသည်
+# မှတ်ချက် - Server Restart ဖြစ်လျှင် Memory ပျောက်ပါမည်။ အမြဲတမ်းမှတ်လိုပါက Database လိုအပ်ပါသည်။
+chat_history = {}
 
 @app.route('/webhook', methods=['GET'])
 def verify():
@@ -27,46 +32,54 @@ def webhook():
                     message_text = messaging['message'].get('text')
                     if message_text:
                         try:
-                            # အမည်ကို call_gemini_3_flash ဟု တိကျစွာ ပြောင်းလဲထားသည်
-                            ai_answer = call_gemini_3_flash(message_text)
+                            # User တဦးချင်းစီ၏ History ကို ယူခြင်း
+                            history = chat_history.get(sender_id, [])
+                            
+                            # AI ထံမှ အဖြေတောင်းခြင်း
+                            ai_answer = call_senior_ai_manager(message_text, history)
+                            
+                            # History ကို Update လုပ်ခြင်း (နောက်ဆုံး ၅ ကြိမ်အထိ မှတ်မည်)
+                            history.append({"role": "user", "parts": [{"text": message_text}]})
+                            history.append({"role": "model", "parts": [{"text": ai_answer}]})
+                            chat_history[sender_id] = history[-10:] 
+                            
                             send_fb_message(sender_id, ai_answer)
                         except Exception as e:
-                            print(f"Server Error: {e}")
-                            send_fb_message(sender_id, "စနစ်ကို ခေတ္တစစ်ဆေးနေပါတယ်ခင်ဗျာ။")
+                            print(f"Deployment Error: {e}")
+                            send_fb_message(sender_id, "လူကြီးမင်း၏ မေးခွန်းအတွက် အကောင်းဆုံး ဗျူဟာကို စဉ်းစားနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။")
     return "ok", 200
 
-def call_gemini_3_flash(prompt):
+def call_senior_ai_manager(prompt, history):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
-    headers = {'Content-Type': 'application/json'}
     
-    KNOWLEDGE_DATABASE = """
-    GrowBot Agency ဝန်ဆောင်မှုများ-
-    ၁။ AI Chatbots (FB/Telegram)
-    ၂။ Marketing Strategy
-    ၃။ Business Automation
-    ၄။ Special Content Agent 2 (Auto FB Posting)
+    # လုပ်ငန်းဗျူဟာနှင့် Knowledge Database
+    KNOWLEDGE_DB = """
+    ROLE: Senior AI Strategy Consultant of GrowBot Agency.
+    MISSION: လုပ်ငန်းရှင်များကို AI နည်းပညာဖြင့် အောင်မြင်အောင် လမ်းပြရန်နှင့် ယုံကြည်မှုတည်ဆောက်ရန်။
+    TONE: တည်ကြည်သော၊ ပရော်ဖက်ရှင်နယ်ဆန်သော၊ အကျိုးအကြောင်းခိုင်လုံသော။
+    
+    SERVICES & PRICING:
+    1. All-in-One AI Growth System (180,000 MMK/month): 10 Special Contents, 5 Scripts, 15 Posts, 24/7 Chatbot.
+    2. AI Content & Video Power Pack (250,000 MMK/month): 10 Special Contents, 5 Scripts, 10 AI Video Posts.
+    
+    STRATEGY:
+    - Customer ၏ Pain Point ကို အရင်မေးမြန်းပြီး Diagnostic လုပ်ပါ။
+    - Myanmar FB Boost project အောင်မြင်မှု သာဓကကို ထည့်သွင်းပြောဆိုပါ။
+    - ၁ ပတ် Trial ပေးနိုင်ကြောင်းနှင့် လစဉ်ကြေးစနစ်ဖြစ်၍ အန္တရာယ်ကင်းကြောင်း အသိပေးပါ။
+    - ရောင်းရုံသက်သက်မဟုတ်ဘဲ အကြံပေးတစ်ယောက်ကဲ့သို့ ပြုမူပါ။
     """
 
-    system_instruction = f"You are the Senior AI Manager of GrowBot. Use this DB to answer: {KNOWLEDGE_DATABASE}"
-    
     payload = {
-        "contents": [{
-            "parts": [{"text": f"System: {system_instruction}\nCustomer: {prompt}"}]
-        }]
+        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_DB}\n\nCustomer Message: {prompt}"}]}]
     }
     
+    response = requests.post(url, json=payload, timeout=15)
+    result = response.json()
+    
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        result = response.json()
-        
-        if 'candidates' in result:
-            return result['candidates'][0]['content']['parts'][0]['text']
-        else:
-            print(f"API Error: {result}")
-            return "လူကြီးမင်း မေးခွန်းကို အမြန်ဆုံး နားလည်အောင် ကြိုးစားနေပါတယ်ခင်ဗျာ။"
-    except Exception as e:
-        print(f"API Connection Error: {e}")
-        return "ခေတ္တစောင့်ပေးပါ၊ စနစ်ကို ပြန်လည်စစ်ဆေးနေပါတယ်။"
+        return result['candidates'][0]['content']['parts'][0]['text']
+    except:
+        return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် အဆီလျော်ဆုံး အဖြေကို ရှာဖွေနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
