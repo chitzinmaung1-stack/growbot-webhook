@@ -51,8 +51,8 @@ def webhook():
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
-    # Gemini 3 Flash URL
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
+    # gemini-2.0-flash-exp URL
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={GOOGLE_API_KEY}"
     
     KNOWLEDGE_DB = """
     ROLE: Senior AI Strategy Consultant of GrowBot Agency.
