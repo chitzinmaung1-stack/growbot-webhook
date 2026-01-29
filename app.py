@@ -27,11 +27,11 @@ def webhook():
                     message_text = messaging['message'].get('text')
                     if message_text:
                         try:
-                            ai_answer = call_gemini_2_flash(message_text)
+                            # အမည်ကို call_gemini_3_flash ဟု တိကျစွာ ပြောင်းလဲထားသည်
+                            ai_answer = call_gemini_3_flash(message_text)
                             send_fb_message(sender_id, ai_answer)
                         except Exception as e:
-                            # Error ဖြစ်ရင် logs မှာ အတိအကျကြည့်လို့ရအောင် လုပ်ထားပါတယ်
-                            print(f"Deployment Error: {e}")
+                            print(f"Server Error: {e}")
                             send_fb_message(sender_id, "စနစ်ကို ခေတ္တစစ်ဆေးနေပါတယ်ခင်ဗျာ။")
     return "ok", 200
 
@@ -39,46 +39,34 @@ def call_gemini_3_flash(prompt):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    # --- ဤနေရာတွင် မိမိလုပ်ငန်းအကြောင်းအရာများကို အသေးစိတ် ဖြည့်စွက်နိုင်ပါသည် ---
     KNOWLEDGE_DATABASE = """
-    GrowBot Agency ဝန်ဆောင်မှုများ အသေးစိတ်-
-    ၁။ AI Chatbot Development: Facebook Messenger နှင့် Telegram (Airdrop/Task bots) များတွင် ၂၄ နာရီ အလိုအလျောက် အရောင်းပိတ်ပေးမည့် စနစ်များ။
-    ၂။ Sales & Marketing Strategy: လုပ်ငန်းများ၏ အမြတ်အစွန်း တိုးတက်လာစေရန် နည်းဗျူဟာများ ရေးဆွဲပေးခြင်း။
-    ၃။ Business Automation: လူအင်အား သုံးစရာမလိုဘဲ လုပ်ငန်းစဉ်များကို AI ဖြင့် အလိုအလျောက် လည်ပတ်စေခြင်း။
-    ၄။ Special Content Agent 2: စာတစ်ကြောင်း ပို့ရုံဖြင့် ပရော်ဖက်ရှင်နယ် Marketing Post နှင့် ပုံများကို Page ပေါ် တိုက်ရိုက်တင်ပေးသည့် စနစ်။
-    အောင်မြင်မှုမှတ်တမ်း: Myanmar FB Boost (Telegram Airdrop Bot) ကို အောင်မြင်စွာ တည်ဆောက်ခဲ့သည်။
+    GrowBot Agency ဝန်ဆောင်မှုများ-
+    ၁။ AI Chatbots (FB/Telegram)
+    ၂။ Marketing Strategy
+    ၃။ Business Automation
+    ၄။ Special Content Agent 2 (Auto FB Posting)
     """
 
-    system_instruction = f"""
-    You are the Senior AI Manager of GrowBot Agency. 
-    Use the following Knowledge Database to answer customer questions precisely and professionally in Burmese.
-    Combine your internal reasoning with this data.
-    
-    DATABASE:
-    {KNOWLEDGE_DATABASE}
-    """
+    system_instruction = f"You are the Senior AI Manager of GrowBot. Use this DB to answer: {KNOWLEDGE_DATABASE}"
     
     payload = {
         "contents": [{
-            "parts": [{"text": f"Instruction: {system_instruction}\n\nCustomer Message: {prompt}"}]
+            "parts": [{"text": f"System: {system_instruction}\nCustomer: {prompt}"}]
         }]
     }
     
-    # ... (ကျန်တဲ့ request ပိုင်းက အတူတူပါပဲ) ...
-
-    
-    response = requests.post(url, headers=headers, json=payload)
-    result = response.json()
-    
-    # API ကနေ အဖြေပြန်လာတဲ့ပုံစံကို သေချာစစ်ဆေးဖတ်ယူခြင်း
     try:
-        if 'candidates' in result and len(result['candidates']) > 0:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        result = response.json()
+        
+        if 'candidates' in result:
             return result['candidates'][0]['content']['parts'][0]['text']
         else:
-            print(f"API Response Error: {result}")
-            return "လူကြီးမင်း မေးခွန်းကို ကျွန်တော် နားလည်အောင် ကြိုးစားနေပါတယ်ခင်ဗျာ။"
-    except (KeyError, IndexError):
-        return "ဝန်ဆောင်မှုများအကြောင်း သိလိုပါက တစ်ချက်လောက် ထပ်မေးပေးပါခင်ဗျာ။"
+            print(f"API Error: {result}")
+            return "လူကြီးမင်း မေးခွန်းကို အမြန်ဆုံး နားလည်အောင် ကြိုးစားနေပါတယ်ခင်ဗျာ။"
+    except Exception as e:
+        print(f"API Connection Error: {e}")
+        return "ခေတ္တစောင့်ပေးပါ၊ စနစ်ကို ပြန်လည်စစ်ဆေးနေပါတယ်။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
