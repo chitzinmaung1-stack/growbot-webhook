@@ -1,10 +1,11 @@
 import os
-import requests
+import google.generativeai as genai
 from flask import Flask, request
+import requests
 
 app = Flask(__name__)
 
-# Render မှ Environment Variables များကို တိုက်ရိုက်ယူသည်
+# Render Environment Variables
 KEYS = [os.getenv("GOOGLE_API_KEY_1"), os.getenv("GOOGLE_API_KEY_2")]
 PAGE_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
@@ -19,43 +20,32 @@ def webhook():
                 if messaging.get('message'):
                     msg = messaging['message'].get('text')
                     if msg:
-                        # 2.0 Variants အားလုံးကို လိုက်စမ်းမည့် Function
-                        reply = try_2_0_variants(msg)
+                        # SDK ကိုသုံး၍ အဖြေတောင်းခြင်း
+                        reply = call_gemini_sdk(msg)
                         send_fb(sender_id, reply)
     return "ok", 200
 
-def try_2_0_variants(prompt):
-    # စမ်းသပ်မည့် 2.0 Model ID များ စာရင်း
-    variants = [
-        "gemini-2.0-flash-exp",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-thinking-exp",
-        "gemini-2.0-flash-lite-preview-02-05"
-    ]
+def call_gemini_sdk(prompt):
+    KNOWLEDGE_BASE = "မင်းက GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ ဝန်ဆောင်မှုများကို ယဉ်ကျေးစွာ ရှင်းပြပါ။"
     
-    logs = []
-
-    for model in variants:
-        for i, k in enumerate(KEYS, 1):
-            if not k: continue
+    for k in KEYS:
+        if not k: continue
+        try:
+            # SDK ကို အသုံးပြု၍ ချိတ်ဆက်ခြင်း
+            genai.configure(api_key=k)
+            # 2.0 Flash ကို တိုက်ရိုက်ခေါ်ခြင်း
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            response = model.generate_content(f"{KNOWLEDGE_BASE}\nCustomer: {prompt}")
             
-            # v1beta URL ကို အသုံးပြုထားသည်
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={k}"
-            
-            try:
-                r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=15)
-                res = r.json()
-                
-                if 'candidates' in res:
-                    # အောင်မြင်လျှင် အသုံးပြုသွားသော Model အမည်ကိုပါ ပြမည်
-                    return f"🚀 2.0 Success! (Model: {model})\n\n{res['candidates'][0]['content']['parts'][0]['text']}"
-                else:
-                    err = res.get('error', {}).get('message', 'Unknown Error')
-                    logs.append(f"❌ {model} (Key {i}): {err}")
-            except:
-                logs.append(f"❌ {model} (Key {i}) Connection Fail")
+            if response.text:
+                return response.text
+        except Exception as e:
+            # Quota Error ဖြစ်ပါက နောက် Key တစ်ခုသို့ ကူးမည်
+            if "429" in str(e) or "quota" in str(e).lower():
+                continue
+            return f"❌ Error: {str(e)}"
 
-    return "🚫 2.0 Models အားလုံး မရသေးပါ:\n\n" + "\n".join(logs[:4])
+    return "ဝန်ဆောင်မှုများ ခေတ္တပြည့်နှက်နေပါသည်၊ ၅ မိနစ်ခန့်အကြာမှ ပြန်မေးပေးပါခင်ဗျာ။"
 
 def send_fb(uid, txt):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_TOKEN}"
