@@ -41,7 +41,7 @@ def webhook():
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GOOGLE_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
     # MASTER KNOWLEDGE BASE V3
     KNOWLEDGE_BASE = """
