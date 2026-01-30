@@ -28,13 +28,13 @@ def webhook():
                 if messaging.get('message'):
                     message_text = messaging['message'].get('text')
                     if message_text:
+                        # စာပို့သည့်အခါတိုင်း loading ခဏဖြစ်နေကြောင်း ပြသရန် (Optional)
                         if sender_id not in chat_storage:
                             chat_storage[sender_id] = []
                         
-                        # Gemini 2.5 Flash ကို တိုက်ရိုက်ခေါ်ယူခြင်း
                         ai_answer = call_senior_ai_manager(message_text, chat_storage[sender_id])
                         
-                        # History ကို အသွားအပြန် ၁ ကြိမ်သာ မှတ်သားပြီး ဝန်လျှော့ချခြင်း
+                        # History ကို အသွားအပြန် ၁ ကြိမ် (၂ ကြောင်း) သာ မှတ်သားမည် (ဝန်လျှော့ရန်)
                         chat_storage[sender_id].append({"role": "user", "parts": [{"text": message_text}]})
                         chat_storage[sender_id].append({"role": "model", "parts": [{"text": ai_answer}]})
                         chat_storage[sender_id] = chat_storage[sender_id][-2:] 
@@ -43,29 +43,32 @@ def webhook():
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
-    # CEO ပြောတဲ့အတိုင်း Gemini 2.5 Flash URL ကို သုံးထားပါတယ်
+    # Gemini 2.5 Flash URL
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
     KNOWLEDGE_BASE = """
-    မင်းက GrowBot Agency ရဲ့ Senior Manager ဖြစ်တယ်။
-    - မေးခွန်းတွေအများကြီးမေးလာရင် အရမ်းတိုတိုနဲ့ လိုရင်းကိုပဲ မြန်မြန်ဖြေပေးပါ။
-    - Pricing: All-in-One (180,000 MMK), AI Video (250,000 MMK).
-    - ၁ ပတ် Trial ပေးနိုင်ကြောင်း သေချာထည့်ပြောပါ။
+    မင်းက GrowBot Agency ရဲ့ Senior AI Manager ဖြစ်တယ်။ 
+    - မေးခွန်းအများကြီးကို တစ်ပြိုင်တည်း ဖြေရလျှင် အဓိကအချက်များကိုသာ တိုတိုနှင့် လိုရင်းဖြေပါ။
+    - Services: All-in-One (180,000 MMK), AI Video (250,000 MMK). 
+    - အမြဲတမ်း ၁ ပတ် Trial ပေးနိုင်ကြောင်း ထည့်ပြောပါ။
+    - ဈေးနှုန်းမေးလျှင် ချက်ချင်း Package များကို ချပြပါ။
     """
 
+    # Payload ထဲတွင် history ကို သန့်စင်ပြီးမှ ပို့ဆောင်ခြင်း
     payload = {
         "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_BASE}\n\nCustomer: {prompt}"}]}]
     }
     
     try:
-        # စောင့်ဆိုင်းချိန် (Timeout) ကို ၄၅ စက္ကန့်အထိ တိုးမြှင့်ထားသည်
-        response = requests.post(url, json=payload, timeout=45)
+        # Timeout ကို ၅၀ စက္ကန့်အထိ တိုးမြှင့်ထားသည်
+        response = requests.post(url, json=payload, timeout=50)
         result = response.json()
         if 'candidates' in result:
             return result['candidates'][0]['content']['parts'][0]['text']
-        return "လူကြီးမင်း၏ လုပ်ငန်းအတွက် ဈေးနှုန်းများကို ပြန်လည်စစ်ဆေးနေပါသည်၊ ၁ မိနစ်အကြာမှ ပြန်မေးပေးပါခင်ဗျာ။"
-    except:
-        return "စနစ်ကို ခေတ္တ စစ်ဆေးနေပါသည်၊ ခဏနေမှ ပြန်လည် ပေးပို့ပေးပါခင်ဗျာ။"
+        return "ဝန်ဆောင်မှုများနှင့် ဈေးနှုန်းများကို တိကျစွာ တွက်ချက်ပေးနေပါသည်၊ ၁ မိနစ်အကြာတွင် ပြန်လည်မေးမြန်းပေးပါခင်ဗျာ။"
+    except Exception as e:
+        print(f"API Error: {e}")
+        return "စနစ်အား အဆင့်မြှင့်တင်နေပါသည်၊ ခေတ္တစောင့်ဆိုင်းပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
