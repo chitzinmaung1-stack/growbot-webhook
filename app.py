@@ -42,7 +42,7 @@ def try_api(prompt):
             continue
         
         # URL ကို အရှင်းဆုံး Version ဖြင့် ပြောင်းလဲထားသည်
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={k}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GOOGLE_API_KEY}"
         
         try:
             r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=20)
