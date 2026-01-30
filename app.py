@@ -26,31 +26,41 @@ def webhook():
                 if messaging.get('message'):
                     message_text = messaging['message'].get('text')
                     if message_text:
-                        # Memory မပါဘဲ တိုက်ရိုက်ခေါ်ယူပြီး Loop ကို ဖြတ်တောက်သည်
-                        ai_answer = call_gemini_clean(message_text)
+                        # အမည်ကို call_gemini_direct လို့ တိတိကျကျ ပြောင်းလဲခေါ်ဆိုထားပါသည်
+                        ai_answer = call_gemini_direct(message_text)
                         send_fb_message(sender_id, ai_answer)
     return "ok", 200
 
-def call_gemini_clean(prompt):
-    # CEO ပြောသည့်အတိုင်း 2.5 flash ကို သုံးထားသည်
+# CEO အရင်က အသုံးပြုခဲ့သော Code အပိုင်း (Function)
+def call_gemini_direct(prompt):
+    # Model ID ကို gemini-2.5-flash ဖြင့် အသေချာဆုံး ချိတ်ဆက်ထားသည်
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
-    knowledge_base = "မင်းက GrowBot Agency ရဲ့ Senior Manager ဖြစ်တယ်။ အမြဲတမ်း ယဉ်ကျေးစွာ ဖြေကြားပေးပါ။"
+    knowledge_base = """
+    မင်းက GrowBot Agency ရဲ့ AI Manager ဖြစ်တယ်။ 
+    
+    **နှုတ်ဆက်ပုံလမ်းညွှန်:** Customer က "မင်္ဂလာပါ" လို့ စတင်နှုတ်ဆက်ရင် ဖြစ်စေ၊ စကားစပြောရင်ဖြစ်စေ အောက်ပါအတိုင်း အမြဲနှုတ်ဆက်ပါ။
+    "မင်္ဂလာပါခင်ဗျာ။ GrowBot Agency ရဲ့ AI Manager အနေနဲ့ ကြိုဆိုပါတယ်ခင်ဗျာ။ ကျွန်တော်တို့ GrowBot Agency က AI နည်းပညာတွေကို အသုံးပြုပြီး စီးပွားရေးလုပ်ငန်းတွေ တိုးတက်အောင် ကူညီပေးနေပါတယ်ခင်ဗျာ။ ဘယ်လိုများ ကူညီပေးရမလဲဆိုတာ ပြောပြပေးနိုင်ပါတယ်ခင်ဗျ။"
+    """
 
     payload = {
-        "contents": [{"parts": [{"text": f"{knowledge_base}\n\nCustomer: {prompt}"}]}]
+        "contents": [{
+            "parts": [{"text": f"{knowledge_base}\n\nCustomer: {prompt}"}]
+        }]
     }
     
     try:
-        # Timeout ကို အများဆုံး ၅၀ စက္ကန့်အထိ ပေးထားသည်
-        response = requests.post(url, headers=headers, json=payload, timeout=50)
+        response = requests.post(url, headers=headers, json=payload)
         result = response.json()
-        if 'candidates' in result:
+        if 'candidates' in result and result['candidates']:
             return result['candidates'][0]['content']['parts'][0]['text']
-        return "ဝန်ဆောင်မှုများကို ပြန်လည်စစ်ဆေးနေပါသည်၊ ခေတ္တစောင့်ပေးပါခင်ဗျာ။"
-    except:
-        return "စနစ်အား အဆင့်မြှင့်တင်နေပါသည်၊ ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+        else:
+            print(f"DEBUG - Full Response: {result}")
+            return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
+    except Exception as e:
+        print(f"Error: {e}")
+        return "ခဏနေမှ ပြန်မေးပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
