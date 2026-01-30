@@ -31,43 +31,43 @@ def webhook():
                         if sender_id not in chat_storage:
                             chat_storage[sender_id] = []
                         
+                        # Timeout ကို ၃၀ စက္ကန့်အထိ တိုးမြှင့်ထားသည်
                         ai_answer = call_senior_ai_manager(message_text, chat_storage[sender_id])
                         
                         chat_storage[sender_id].append({"role": "user", "parts": [{"text": message_text}]})
                         chat_storage[sender_id].append({"role": "model", "parts": [{"text": ai_answer}]})
-                        chat_storage[sender_id] = chat_storage[sender_id][-6:] 
+                        chat_storage[sender_id] = chat_storage[sender_id][-4:] # History ကို ပိုလျှော့ပြီး load လျှော့ချသည်
                         
                         send_fb_message(sender_id, ai_answer)
     return "ok", 200
 
 def call_senior_ai_manager(prompt, history):
+    # Gemini 2.5 Flash (Stable URL)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GOOGLE_API_KEY}"
     
-    # MASTER KNOWLEDGE BASE V3
     KNOWLEDGE_BASE = """
-    ROLE: GrowBot Agency ၏ Senior AI Manager ဖြစ်သည်။
-    
-    SERVICES & PRICING:
-    1. All-in-One AI Growth System (180,000 MMK/month): AI Content (10), Scripts (5), Facebook Posts (15) နှင့် 24/7 AI Chatbot ပါဝင်သည်။
-    2. AI Video Power Pack (250,000 MMK/month): ပစ်မှတ်ထိရောက်မည့် AI Video Content များ အဓိကဖန်တီးပေးသည်။
-    
-    KEY STRATEGIES:
-    - စျေးနှုန်းမေးလျှင် အထက်ပါ package နှစ်မျိုးကို အသေးစိတ်ရှင်းပြပါ။
-    - ၁ ပတ် Trial ပေးနိုင်ကြောင်း အမြဲထည့်ပြောပါ။
-    - Myanmar FB Boost project အောင်မြင်မှုကို ယုံကြည်မှုတည်ဆောက်ရန် သုံးပါ။
-    - Customer အခက်အခဲကို အရင်နားထောင်ပြီးမှ ဖြေရှင်းချက်ပေးပါ။
+    မင်းက GrowBot Agency ရဲ့ Senior Manager ဖြစ်တယ်။
+    - မေးခွန်းတွေအများကြီးမေးလာရင် တိုတိုနဲ့ ရှင်းရှင်း တစ်ခုချင်းစီ ခွဲဖြေပေးပါ။
+    - Services: All-in-One (180,000 MMK), AI Video (250,000 MMK). 
+    - ၁ ပတ် Trial ပေးနိုင်ကြောင်း သေချာထည့်ပြောပါ။
+    - Pricing မေးလာရင် ချက်ချင်း Package ဈေးနှုန်းတွေကို ချပြပါ။
+    - Myanmar FB Boost အောင်မြင်မှုကို ယုံကြည်မှုအတွက် သုံးပါ။
     """
 
     payload = {
-        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_BASE}\n\nCustomer: {prompt}"}]}]
+        "contents": history + [{"role": "user", "parts": [{"text": f"Context: {KNOWLEDGE_BASE}\n\nCustomer Message: {prompt}"}]}]
     }
     
     try:
+        # Timeout ကို ၂၅ စက္ကန့်အထိ ပေးထားသည်
         response = requests.post(url, json=payload, timeout=25)
         result = response.json()
-        return result['candidates'][0]['content']['parts'][0]['text']
-    except:
-        return "လူကြီးမင်း၏ မေးခွန်းအတွက် အကောင်းဆုံးဝန်ဆောင်မှုကို တွက်ချက်နေပါသည်၊ ခဏလေးစောင့်ပေးပါခင်ဗျာ။"
+        if 'candidates' in result:
+            return result['candidates'][0]['content']['parts'][0]['text']
+        return "လူကြီးမင်း၏ မေးခွန်းများအတွက် အသေးစိတ် ဈေးနှုန်းနှင့် ဝန်ဆောင်မှုများကို ပြန်လည်တွက်ချက်နေပါသည်၊ ခဏလေး စောင့်ပေးပါခင်ဗျာ။"
+    except Exception as e:
+        print(f"Server Error: {e}")
+        return "စနစ်ကို ခေတ္တ စစ်ဆေးနေပါသည်၊ ၁ မိနစ်ခန့်အကြာမှ ပြန်လည် ပေးပို့ပေးပါခင်ဗျာ။"
 
 def send_fb_message(recipient_id, message_text):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
