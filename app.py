@@ -4,8 +4,7 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Render မှ Environment Variables များကို ယူသည်
-# API Key နှစ်ခုလုံးကို Mail အသစ်မှ Key များဖြင့် အစားထိုးထားရန် လိုသည်
+# Render မှ Environment Variables များကို တိုက်ရိုက်ယူသည်
 KEYS = [os.getenv("GOOGLE_API_KEY_1"), os.getenv("GOOGLE_API_KEY_2")]
 PAGE_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
@@ -20,22 +19,23 @@ def webhook():
                 if messaging.get('message'):
                     msg = messaging['message'].get('text')
                     if msg:
-                        reply = try_all_models_and_keys(msg)
+                        # 2.0 Variants အားလုံးကို လိုက်စမ်းမည့် Function
+                        reply = try_2_0_variants(msg)
                         send_fb(sender_id, reply)
     return "ok", 200
 
-def try_all_models_and_keys(prompt):
-    # စမ်းသပ်မည့် Model ID များ စာရင်း
-    model_variants = [
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-002",
-        "gemini-1.5-flash-001"
+def try_2_0_variants(prompt):
+    # စမ်းသပ်မည့် 2.0 Model ID များ စာရင်း
+    variants = [
+        "gemini-2.0-flash-exp",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-thinking-exp",
+        "gemini-2.0-flash-lite-preview-02-05"
     ]
     
-    debug_log = []
+    logs = []
 
-    for model in model_variants:
+    for model in variants:
         for i, k in enumerate(KEYS, 1):
             if not k: continue
             
@@ -47,15 +47,15 @@ def try_all_models_and_keys(prompt):
                 res = r.json()
                 
                 if 'candidates' in res:
-                    # အောင်မြင်လျှင် ဘယ် Model နှင့် Key ကို သုံးသွားသည်ကိုပါ ပြမည်
-                    return f"✅ Success! (Model: {model})\n\n{res['candidates'][0]['content']['parts'][0]['text']}"
+                    # အောင်မြင်လျှင် အသုံးပြုသွားသော Model အမည်ကိုပါ ပြမည်
+                    return f"🚀 2.0 Success! (Model: {model})\n\n{res['candidates'][0]['content']['parts'][0]['text']}"
                 else:
                     err = res.get('error', {}).get('message', 'Unknown Error')
-                    debug_log.append(f"❌ {model} (Key {i}): {err}")
-            except Exception as e:
-                debug_log.append(f"❌ {model} (Key {i}) Connection Error")
+                    logs.append(f"❌ {model} (Key {i}): {err}")
+            except:
+                logs.append(f"❌ {model} (Key {i}) Connection Fail")
 
-    return "🚫 1.5 Flash Models အားလုံး မရပါ:\n\n" + "\n".join(debug_log[:5]) # စာတိုစေရန် ၅ ခုသာပြသည်
+    return "🚫 2.0 Models အားလုံး မရသေးပါ:\n\n" + "\n".join(logs[:4])
 
 def send_fb(uid, txt):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_TOKEN}"
