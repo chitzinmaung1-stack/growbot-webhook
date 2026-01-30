@@ -4,7 +4,7 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-# Key များကို Render မှ တိုက်ရိုက်ယူခြင်း
+# Render မှ နာမည်များကို အတိအကျယူခြင်း
 KEY1 = os.getenv("GOOGLE_API_KEY_1")
 KEY2 = os.getenv("GOOGLE_API_KEY_2")
 PAGE_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
@@ -26,28 +26,38 @@ def webhook():
                 if messaging.get('message'):
                     msg = messaging['message'].get('text')
                     if msg:
-                        final_reply = try_all_keys(msg)
+                        # စမ်းသပ်ချက်များကို တိုက်ရိုက်ပြရန်
+                        final_reply = try_api(msg)
                         send_fb(sender_id, final_reply)
     return "ok", 200
 
-def try_all_keys(prompt):
+def try_api(prompt):
+    # Gemini 1.5 Flash Stable Version ကို သုံးသည်
     keys = [KEY1, KEY2]
-    # နာမည်ကို gemini-1.5-flash-latest ဟု ပိုမိုတိကျစွာ ပြောင်းလဲထားသည်
-    model_id = "gemini-1.5-flash-latest" 
-    
-    for k in keys:
-        if not k: continue
+    debug_info = []
+
+    for i, k in enumerate(keys, 1):
+        if not k:
+            debug_info.append(f"Key {i}: Empty in Render")
+            continue
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={k}"
+        # URL ကို အရှင်းဆုံး Version ဖြင့် ပြောင်းလဲထားသည်
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={k}"
+        
         try:
-            r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=25)
+            r = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=20)
             res = r.json()
+            
             if 'candidates' in res:
                 return res['candidates'][0]['content']['parts'][0]['text']
-        except:
-            continue
-            
-    return "လူကြီးမင်း၏ မေးခွန်းအတွက် အကောင်းဆုံးဝန်ဆောင်မှုများကို ပြန်လည်စစ်ဆေးနေပါသည်၊ ခဏလေးစောင့်ပေးပါခင်ဗျာ။"
+            else:
+                # ဘာကြောင့် မရတာလဲဆိုတဲ့ အဖြေကို တိုက်ရိုက်ယူမည်
+                err_msg = res.get('error', {}).get('message', 'No Response')
+                debug_info.append(f"Key {i} Error: {err_msg}")
+        except Exception as e:
+            debug_info.append(f"Key {i} Exception: {str(e)}")
+
+    return "❌ System Error Info:\n" + "\n".join(debug_info)
 
 def send_fb(uid, txt):
     url = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_TOKEN}"
